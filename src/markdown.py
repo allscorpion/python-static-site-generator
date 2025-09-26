@@ -153,7 +153,7 @@ def block_to_block_type(block):
     orderedListNum = 1
 
     for line in lines:
-        if re.match(r"^> (.+)", line):
+        if re.match(r"^>(.*)", line):
             quoteMatches += 1
         elif re.match(r"^- (.+)", line):
             unorderedListMatches += 1
@@ -182,11 +182,13 @@ def markdown_to_html_node(markdown):
     html_nodes = []
     for block in blocks:
         blockType = block_to_block_type(block)
+
         match blockType:
             case BlockType.PARAGRAPH:
                 block = block.replace("\n", " ")
                 child_nodes = []
                 text_nodes = text_to_textnodes(block)
+
                 for text_node in text_nodes:
                     html_node = text_node_to_html_node(text_node)
                     child_nodes.append(html_node)
@@ -194,9 +196,21 @@ def markdown_to_html_node(markdown):
                 html_nodes.append(ParentNode("p", child_nodes))
 
             case BlockType.QUOTE:
-                parsed_block = block.replace("> ", "").replace("\n", " ")
+                lines = block.split("\n")
+                new_lines = []
+                for line in lines:
+                    parsed_line = line.replace(">", "").strip()
+
+                    if not parsed_line:
+                        continue
+
+                    new_lines.append(parsed_line)
+
+                parsed_block = " ".join(new_lines)
+
                 child_nodes = []
                 text_nodes = text_to_textnodes(parsed_block)
+
                 for text_node in text_nodes:
                     html_node = text_node_to_html_node(text_node)
                     child_nodes.append(html_node)
@@ -270,3 +284,19 @@ def markdown_to_html_node(markdown):
                 html_nodes.append(ParentNode("pre", child_nodes))
 
     return ParentNode("div", html_nodes)
+
+
+def extract_title(markdown):
+    blocks = markdown_to_blocks(markdown)
+
+    for block in blocks:
+        blockType = block_to_block_type(block)
+
+        if blockType == BlockType.HEADING:
+            match = re.match(r"^(#{1}) (.+)", block)
+            if not match:
+                continue
+
+            return match[2]
+
+    raise Exception("no h1 header found")

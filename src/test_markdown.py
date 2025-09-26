@@ -5,6 +5,7 @@ from markdown import (
     block_to_block_type,
     extract_markdown_images,
     extract_markdown_links,
+    extract_title,
     markdown_to_blocks,
     markdown_to_html_node,
     split_nodes_delimiter,
@@ -441,6 +442,20 @@ class TestSuite(unittest.TestCase):
             "<div><pre><code>This is text that _should_ remain\nthe **same** even with inline stuff\n</code></pre></div>",
         )
 
+    def test_image(self):
+        md = """
+        # Tolkien Fan Club
+
+        ![JRR Tolkien sitting](/images/tolkien.png)
+    """
+
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(
+            html,
+            '<div><h1>Tolkien Fan Club</h1><p><img src="/images/tolkien.png" alt="JRR Tolkien sitting" /></p></div>',
+        )
+
     def test_unordered_list(self):
         md = """
     - item 1
@@ -555,6 +570,45 @@ class TestSuite(unittest.TestCase):
             html,
             "<div><blockquote>This is a blockquote block</blockquote><p>this is paragraph text</p></div>",
         )
+
+    def test_blockquote_2(self):
+        md = """
+        > "I am in fact a Hobbit in all but size."
+        >
+        > -- J.R.R. Tolkien
+        """
+
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(
+            html,
+            '<div><blockquote>"I am in fact a Hobbit in all but size." -- J.R.R. Tolkien</blockquote></div>',
+        )
+
+    def test_extract_title(self):
+        md = """
+            # This is a title
+        """
+
+        title = extract_title(md)
+        self.assertEqual(title, "This is a title")
+
+    def test_extract_title_2(self):
+        md = """
+            ## This is a title
+        """
+
+        self.assertRaises(Exception, lambda: extract_title(md))
+
+    def test_extract_title_3(self):
+        md = """
+            ## This is a title
+
+            # This is the actual title
+        """
+
+        title = extract_title(md)
+        self.assertEqual(title, "This is the actual title")
 
 
 if __name__ == "__main__":
