@@ -41,6 +41,31 @@ def generate_page(from_path, template_path, dest_path):
                 d.write(template_contents)
 
 
+def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
+    dir = os.listdir(dir_path_content)
+
+    for item in dir:
+        full_path = os.path.join(dir_path_content, item)
+        is_file = os.path.isfile(full_path)
+
+        if is_file:
+            if not ".md" in item:
+                raise Exception("cannot handle non markdown files")
+
+            generate_page(
+                full_path,
+                template_path,
+                os.path.join(dest_dir_path, item.replace(".md", ".html")),
+            )
+            continue
+
+        dest_folder = os.path.join(dest_dir_path, item)
+
+        if not os.path.exists(dest_folder):
+            os.mkdir(dest_folder)
+        generate_pages_recursive(full_path, template_path, dest_folder)
+
+
 def main():
     public_dir = "./public"
     static_dir = "./static"
@@ -54,7 +79,7 @@ def main():
 
     copy_dir(dir, static_dir, public_dir)
 
-    generate_page("./content/index.md", "./template.html", "./public/index.html")
+    generate_pages_recursive("./content", "./template.html", "./public")
 
 
 if __name__ == "__main__":
